@@ -1,0 +1,18 @@
+Source: qcom-nuttx-firmware
+Section: misc
+Priority: optional
+Maintainer: Chengheng Tan <chenghen@qti.qualcomm.com>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 13),
+Standards-Version: 4.6.2
+Homepage: <N/A>
+
+
+Package: qcom-nuttx-firmware
+Architecture: any
+Multi-Arch: foreign
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+Description: Qualcomm mcb firmware

@@ -18,6 +18,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_STM32_HARDWARE_STM32_FLASH_H
@@ -167,14 +172,14 @@
 
 #    elif defined(CONFIG_STM32_FLASH_CONFIG_I) && defined(CONFIG_STM32_STM32F4XXX)
 #      define STM32_FLASH_NPAGES      24
-#      define STM32_FLASH_SIZE        _K((4 * 16) + (1 * 64) + (7 * 128)) + \
-                                      _K((4 * 16) + (1 * 64) + (7 * 128))
+#      define STM32_FLASH_SIZE        (_K(24 * 16))
 #      define STM32_FLASH_SIZES       {_K(16), _K(16), _K(16), _K(16),      \
-                                      _K(64), _K(128), _K(128), _K(128),    \
-                                      _K(128), _K(128), _K(128), _K(128),   \
+                                      _K(16), _K(16), _K(16), _K(16),    \
+                                      _K(16), _K(16), _K(16), _K(16),   \
                                       _K(16), _K(16), _K(16), _K(16),       \
-                                      _K(64), _K(128), _K(128), _K(128),    \
-                                      _K(128), _K(128), _K(128), _K(128)}
+                                      _K(16), _K(16), _K(16), _K(16),    \
+                                      _K(16), _K(16), _K(16), _K(16)}
+
 #    endif
 
 /* Define the Valid Configuration the G4 */

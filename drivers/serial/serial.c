@@ -1043,51 +1043,63 @@ static ssize_t uart_readv(FAR struct file *filep, FAR struct uio *uio)
           uio_copyfrom(uio, recvd, &ch, 1);
           recvd++;
 
-          if (dev->tc_lflag & ECHO)
+        }
+
+#ifdef CONFIG_DEV_SERIAL_FULLBLOCKS
+      /* No... then we would have to wait to get receive more data.
+       * If the user has specified the O_NONBLOCK option, then just
+       * return what we have.
+       */
+
+      else if ((filep->f_oflags & O_NONBLOCK) != 0)
+        {
+          /* If nothing was transferred, then return the -EAGAIN
+           * error (not zero which means end of file).
+           */
+
+          if (recvd < 1)
             {
-              /* Check for the beginning of a VT100 escape sequence, 3 byte */
+              recvd = -EAGAIN;
+            }
 
-              if (ch == ASCII_ESC)
-                {
-                  /* Mark that we should skip 2 more bytes */
+          break;
+        }
+#else
+      /* No... the circular buffer is empty.  Have we returned anything
+       * to the caller?
+       */
 
-                  dev->escape = 2;
-                  continue;
-                }
-              else if (dev->escape == 2 && ch != ASCII_LBRACKET)
-                {
-                  /* It's not an <esc>[x 3 byte sequence, show it */
+      else if (recvd > 0)
+        {
+          /* Yes.. break out of the loop and return the number of bytes
+           * received up to the wait condition.
+           */
 
-                  dev->escape = 0;
-                }
-              else if (dev->escape > 0)
-                {
-                  /* Skipping character count down */
+          break;
+        }
 
-                  dev->escape--;
-                  continue;
-                }
+      else if (filep->f_inode == 0)
+        {
+          /* File has been closed.
+           * Descriptor is not valid.
+           */
 
-              /* Echo if the character is not a control byte */
+          recvd = -EBADFD;
+          break;
+        }
 
-              if (!iscntrl(ch & 0xff) || ch == '\n')
-                {
-                  if (ch == '\n')
-                    {
-                      uart_putxmitchar(dev, '\r', true);
-                    }
+      /* No... then we would have to wait to get receive some data.
+       * If the user has specified the O_NONBLOCK option, then do not
+       * wait.
+       */
 
-                  uart_putxmitchar(dev, ch, true);
+      else if ((filep->f_oflags & O_NONBLOCK) != 0)
+        {
+          /* Break out of the loop returning -EAGAIN */
 
-                  /* Mark the tx buffer have echoed content here,
-                   * to avoid the tx buffer is empty such as special escape
-                   * sequence received, but enable the tx interrupt.
-                   */
-
-                  if (dev->tc_lflag & ICANON)
-                    {
-#ifdef CONFIG_SERIAL_TXDMA
-                      uart_dmatxavail(dev);
+          recvd = -EAGAIN;
+          break;
+        }
 #endif
                       uart_enabletxint(dev);
                     }

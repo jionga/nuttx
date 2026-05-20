@@ -18,6 +18,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  ****************************************************************************/
 
 /****************************************************************************
@@ -31,6 +35,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
+#include <debug.h>
 
 #include <nuttx/irq.h>
 #include <nuttx/timers/capture.h>
@@ -99,6 +104,7 @@ static int stm32_start(struct cap_lowerhalf_s *lower);
 static int stm32_stop(struct cap_lowerhalf_s *lower);
 static int stm32_getduty(struct cap_lowerhalf_s *lower, uint8_t *duty);
 static int stm32_getfreq(struct cap_lowerhalf_s *lower, uint32_t *freq);
+static int stm32_chchannel(struct cap_lowerhalf_s *lower, uint32_t *channel);
 
 /****************************************************************************
  * Private Data
@@ -112,6 +118,7 @@ static const struct cap_ops_s g_cap_ops =
   .stop        = stm32_stop,
   .getduty     = stm32_getduty,
   .getfreq     = stm32_getfreq,
+  .chchannel   = stm32_chchannel,
 };
 
 #ifdef CONFIG_STM32_TIM1_CAP
@@ -266,7 +273,7 @@ static int stm32_cap_handler(int irq, void * context, void * arg)
   if (period != 0)
     {
       lower->duty = (100 * STM32_CAP_GETCAPTURE(lower->cap, 0x3 & (~ch))) /
-                    period;
+                    (period/10);
     }
   else
     {
@@ -464,6 +471,57 @@ static int stm32_getfreq(struct cap_lowerhalf_s *lower, uint32_t *freq)
   leave_critical_section(flags);
 
   return OK;
+}
+
+
+/****************************************************************************
+ * Name: stm32_chchannel
+ *
+ * Description:
+ *   change stm32 timer channel for capture
+ *
+ * Input Parameters:
+ *   lower - A pointer the publicly visible representation of the
+ *             "lower-half" driver state structure.
+ *   channel  - 1~4 .
+ *
+ * Returned Value:
+ *   Zero on success; a negated errno value on failure.
+ *
+ ****************************************************************************/
+
+static int stm32_chchannel(struct cap_lowerhalf_s *lower, uint32_t *channel)
+{
+  struct stm32_lowerhalf_s *priv = (struct stm32_lowerhalf_s *)lower;
+
+  /* stop the current channel */
+  if (priv->started)
+    {
+      STM32_CAP_SETCHANNEL(priv->cap, STM32_CAP_FLAG_IRQ_COUNTER,
+                           STM32_CAP_EDGE_DISABLED);
+      switch (priv->channel)
+        {
+          case 1:
+            STM32_CAP_ENABLEINT(priv->cap, STM32_CAP_FLAG_IRQ_CH_1, false);
+            break;
+
+          case 2:
+            STM32_CAP_ENABLEINT(priv->cap, STM32_CAP_FLAG_IRQ_CH_2, false);
+            break;
+
+          default:
+            return ERROR;
+        }
+
+      STM32_CAP_SETISR(priv->cap, NULL, NULL);
+      priv->started = false;
+    }
+
+  /* modify the current channel */
+  memcpy(&priv->channel, channel, sizeof(uint32_t));
+
+  /* restart current capture */
+  return stm32_start(lower);
 }
 
 /****************************************************************************

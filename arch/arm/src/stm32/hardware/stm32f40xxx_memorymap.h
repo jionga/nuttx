@@ -18,6 +18,11 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  ****************************************************************************/
 
 #ifndef __ARCH_ARM_SRC_STM32_HARDWARE_STM32F40XXX_MEMORYMAP_H
@@ -62,7 +67,7 @@
 
 #define STM32_BOOT_BASE      0x00000000     /* 0x00000000-0x000fffff: Aliased boot memory */
                                             /* 0x00100000-0x07ffffff: Reserved */
-#define STM32_FLASH_BASE     0x08000000     /* 0x08000000-0x080fffff: FLASH memory */
+#define STM32_FLASH_BASE     0x08100000     /* 0x08000000-0x080fffff: FLASH memory */
                                             /* 0x08100000-0x0fffffff: Reserved */
 #define STM32_CCMRAM_BASE    0x10000000     /* 0x10000000-0x1000ffff: 64Kb CCM data RAM */
                                             /* 0x10010000-0x1ffeffff: Reserved */

@@ -433,6 +433,13 @@
 #  define strftime_like(a) __attribute__((__format__(__strftime__, a, 0)))
 #  define object_size(o, t) __builtin_object_size(o, t)
 
+
+#  define formatlike(a) __attribute__((__format_arg__(a)))
+#  define printflike(a, b) __attribute__((__format__(__printf__, a, b)))
+#  define sysloglike(a, b) __attribute__((__format__(__syslog__, a, b)))
+#  define scanflike(a, b) __attribute__((__format__(__scanf__, a, b)))
+#  define strftimelike(a) __attribute__((__format__(__strftime__, a, 0)))
+
 /* GCC does not use storage classes to qualify addressing */
 
 #  define FAR

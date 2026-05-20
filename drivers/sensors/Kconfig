@@ -1407,6 +1407,32 @@ config SENSORS_ADXL372_THREAD_STACKSIZE
 endif # SENSORS_ADXL372_UORB
 
 endif # SENSORS_ADXL372
+config SENSORS_ICM42688
+        bool "Invensense ICM42688 Sensor support"
+        default n
+        ---help---
+                Enable driver support for Invensense ICM42688 IMU device.
+
+if SENSORS_ICM42688
+
+choice
+        prompt "ICM42688 Interface"
+        default ICM42688_SPI
+
+config ICM42688_SPI
+        bool "ICM42688 SPI Interface"
+        select SPI
+        ---help---
+                Enables support for the SPI interface.
+
+config ICM42688_I2C
+        bool "ICM42688 I2C Interface"
+        select I2C
+        ---help---
+                Enables support for the I2C interface.
+endchoice
+
+endif
 
 config SENSORS_MPU60X0
 	bool "Invensense MPU60x0 Sensor support"
@@ -1473,8 +1499,8 @@ config MPU60X0_GYRO_FS_SEL
 	int "MPU60x0 Gyro FS_SEL"
 	default 2
 	---help---
-		Sets the @fs_sel bit in GYRO_CONFIG to the value provided. Per
-		the datasheet, the meaning of @fs_sel is as follows:
+		Sets the @fs_sel bit in GYRO_CONFIG to the value provided. Per 
+		the	datasheet, the meaning of @fs_sel is as follows:
 		GYRO_CONFIG(0x1b) :   XG_ST YG_ST ZG_ST FS_SEL1 FS_SEL0 x  x  x
 		XG_ST, YG_ST, ZG_ST  :  self-test (unsupported in this driver)
 				1 -> activate self-test on X, Y, and/or Z gyros

@@ -18,6 +18,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 #
+# Changes from Qualcomm Innovation Center are provided under the following license:
+# Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+#
+#
 ############################################################################
 
 # Include sensor drivers
@@ -470,16 +475,8 @@ ifeq ($(CONFIG_SENSORS_HDC1008),y)
   CSRCS += hdc1008.c
 endif
 
-# ANALOG MAX31865
-
-ifeq ($(CONFIG_SENSORS_MAX31865),y)
-  CSRCS += max31865.c
-endif
-
-# SONY CXD5602PWBIMU
-
-ifeq ($(CONFIG_SENSORS_CXD5602PWBIMU),y)
-  CSRCS += cxd5602pwbimu.c
+ifeq ($(CONFIG_SENSORS_ICM42688),y)
+  CSRCS += icm42688.c
 endif
 
 # Include sensor driver build support

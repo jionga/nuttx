@@ -1,0 +1,5 @@
+qcom-nuttx-firmware (1.0-1) noble; urgency=medium
+
+  * Initial release.
+
+ -- Chengheng Tan <chenghen@qti.qualcomm.com>  Tue, 13 May 2025 06:09:49 +0000

@@ -1,7 +1,5 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32_mpuinit.c
- *
- * SPDX-License-Identifier: Apache-2.0
+ * boards/arm/stm32/omnibusf4/src/omnibusf4.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,97 +16,78 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  *
+ * Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  ****************************************************************************/
+
+
+#ifndef __BOARDS_ARM_STM32_QTIBOOTF427_SRC_QTIBOOTF427_H
+#define __BOARDS_ARM_STM32_QTIBOOTF427_SRC_QTIBOOTF427_H
 
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <assert.h>
-
-#include <nuttx/userspace.h>
-
-#include "mpu.h"
-#include "stm32_mpuinit.h"
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARM_MPU)
+#include <nuttx/compiler.h>
+#include <stdint.h>
+#include <arch/stm32/chip.h>
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef MAX
-#  define MAX(a,b) a > b ? a : b
+/* Configuration ************************************************************/
+
+/* procfs File System */
+
+#ifdef CONFIG_FS_PROCFS
+#  ifdef CONFIG_NSH_PROC_MOUNTPOINT
+#    define STM32_PROCFS_MOUNTPOINT CONFIG_NSH_PROC_MOUNTPOINT
+#  else
+#    define STM32_PROCFS_MOUNTPOINT "/proc"
+#  endif
 #endif
 
-#ifndef MIN
-#  define MIN(a,b) a < b ? a : b
+/****************************************************************************
+ * LEDs
+ */
+
+#define GPIO_LED1 (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz| \
+                   GPIO_OUTPUT_CLEAR|GPIO_PORTG|GPIO_PIN6)
+
+#define GPIO_LED2 (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_50MHz| \
+                   GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN6)
+/****************************************************************************
+ * Public Types
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+#ifndef __ASSEMBLY__
+/****************************************************************************
+ * Public Functions Definitions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Name: stm32_bringup
+ *
+ * Description:
+ *   Perform architecture-specific initialization
+ *
+ *   CONFIG_BOARD_INITIALIZE=y :
+ *     Called from board_initialize().
+ *
+ *   CONFIG_BOARD_INITIALIZE=y && CONFIG_BOARDCTL=y :
+ *     Called from the NSH library
+ *
+ ****************************************************************************/
+
+int stm32_bringup(void);
+
+#endif /* __ASSEMBLY__ */
 #endif
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: stm32_mpuinitialize
- *
- * Description:
- *   Configure the MPU to permit user-space access to only restricted SAM3U
- *   resources.
- *
- ****************************************************************************/
-
-void stm32_mpuinitialize(void)
-{
-  uintptr_t datastart = MIN(USERSPACE->us_datastart, USERSPACE->us_bssstart);
-  uintptr_t dataend   = MAX(USERSPACE->us_dataend,   USERSPACE->us_bssend);
-
-  DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart &&
-              dataend >= datastart);
-
-  /* Show MPU information */
-
-  mpu_showtype();
-
-  /* Reset MPU if enabled */
-
-  mpu_reset();
-
-  /* Configure user flash and SRAM space */
-
-  mpu_user_flash(USERSPACE->us_textstart,
-                 USERSPACE->us_textend - USERSPACE->us_textstart);
-
-  mpu_user_intsram(datastart, dataend - datastart);
-
-  /* Then enable the MPU */
-
-  mpu_control(true, false, true);
-}
-
-/****************************************************************************
- * Name: stm32_mpu_uheap
- *
- * Description:
- *  Map the user-heap region.
- *
- *  This logic may need an extension to handle external SDRAM).
- *
- ****************************************************************************/
-
-void stm32_mpu_uheap(uintptr_t start, size_t size)
-{
-  mpu_user_intsram(start, size);
-}
-
-#endif /* CONFIG_BUILD_PROTECTED && CONFIG_ARM_MPU */

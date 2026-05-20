@@ -1,5 +1,5 @@
 /****************************************************************************
- * arch/arm/src/stm32/stm32_mpuinit.c
+ * boards/arm/stm32/omnibusf4/src/stm32_mmcsd.c
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -24,91 +24,82 @@
  * Included Files
  ****************************************************************************/
 
+#include <debug.h>
 #include <nuttx/config.h>
+#include <nuttx/mmcsd.h>
+#include <nuttx/spi/spi.h>
+#include <pthread.h>
+#include <sched.h>
+#include <time.h>
+#include <unistd.h>
 
-#include <assert.h>
+#include "arm_internal.h"
+#include "chip.h"
+#include "stm32.h"
 
-#include <nuttx/userspace.h>
-
-#include "mpu.h"
-#include "stm32_mpuinit.h"
-
-#if defined(CONFIG_BUILD_PROTECTED) && defined(CONFIG_ARM_MPU)
+#include <arch/board/board.h>
+#include "qtif427.h"
 
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-#ifndef MAX
-#  define MAX(a,b) a > b ? a : b
+#ifdef CONFIG_DISABLE_MOUNTPOINT
+#  error "SD driver requires CONFIG_DISABLE_MOUNTPOINT to be disabled"
 #endif
-
-#ifndef MIN
-#  define MIN(a,b) a < b ? a : b
-#endif
-
-/****************************************************************************
- * Private Data
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: stm32_mpuinitialize
+ * Name: stm32_spi1register
  *
  * Description:
- *   Configure the MPU to permit user-space access to only restricted SAM3U
- *   resources.
- *
+ *   Registers media change callback
  ****************************************************************************/
 
-void stm32_mpuinitialize(void)
+int stm32_spi2register(struct spi_dev_s *dev, spi_mediachange_t callback,
+                       void *arg)
 {
-  uintptr_t datastart = MIN(USERSPACE->us_datastart, USERSPACE->us_bssstart);
-  uintptr_t dataend   = MAX(USERSPACE->us_dataend,   USERSPACE->us_bssend);
+  /* TODO: media change callback */
 
-  DEBUGASSERT(USERSPACE->us_textend >= USERSPACE->us_textstart &&
-              dataend >= datastart);
-
-  /* Show MPU information */
-
-  mpu_showtype();
-
-  /* Reset MPU if enabled */
-
-  mpu_reset();
-
-  /* Configure user flash and SRAM space */
-
-  mpu_user_flash(USERSPACE->us_textstart,
-                 USERSPACE->us_textend - USERSPACE->us_textstart);
-
-  mpu_user_intsram(datastart, dataend - datastart);
-
-  /* Then enable the MPU */
-
-  mpu_control(true, false, true);
+  return OK;
 }
 
 /****************************************************************************
- * Name: stm32_mpu_uheap
+ * Name: stm32_mmcsd_initialize
  *
  * Description:
- *  Map the user-heap region.
- *
- *  This logic may need an extension to handle external SDRAM).
- *
+ *   Initialize SPI-based SD card and card detect thread.
  ****************************************************************************/
 
-void stm32_mpu_uheap(uintptr_t start, size_t size)
+int stm32_mmcsd_initialize(int port, int minor)
 {
-  mpu_user_intsram(start, size);
-}
+  struct spi_dev_s *spi;
+  int rv;
 
-#endif /* CONFIG_BUILD_PROTECTED && CONFIG_ARM_MPU */
+  stm32_configgpio(GPIO_MMCSD_NCD);  /* SD_DET */
+  stm32_configgpio(GPIO_MMCSD_NSS);  /* CS */
+
+  mcinfo("INFO: Initializing mmcsd port %d minor %d SD_DET %x\n",
+         port, minor, stm32_gpioread(GPIO_MMCSD_NCD));
+
+  spi = stm32_spibus_initialize(port);
+  if (spi == NULL)
+    {
+      mcerr("ERROR: Failed to initialize SPI port %d\n", port);
+      return -ENODEV;
+    }
+
+  rv = mmcsd_spislotinitialize(minor, minor, spi);
+  if (rv < 0)
+    {
+      mcerr("ERROR: Failed to bind SPI port %d to SD slot %d\n",
+             port, minor);
+      return rv;
+    }
+
+  spiinfo("INFO: mmcsd card has been initialized successfully\n");
+  return OK;
+}
